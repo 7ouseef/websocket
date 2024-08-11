@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" >
+    <title>Websocket</title>
+</head>
+<body>
+    <h1>Chat room</h1>
+    <input type="text" id="message">
+    <button id="btn" type="button" >Send message</button>
+    <button id="close-btn" type="button" >Close connection</button>
+    <div id="content">
+    </div>
+</body>
+<style>
+    #content{
+        margin-left: 22px;
+    }
+    #content > p{
+        border: 2px solid orange;
+        padding: 12px;
+    }
+</style>
+<script>
+        let client=new WebSocket("ws://localhost:8080/")
+
+        //on connection send joining message and room id to server
+        client.onopen=()=>{
+            console.log("Connected successfully")
+            const roomId=window.location.pathname
+            client.send( JSON.stringify( {
+                type: "join",
+                roomId: roomId.replace("/",""),
+                payload: ""
+            } ) )
+        }
+
+        //on recieving message from server
+        client.onmessage=(e)=>{
+            let message=document.createElement("p")
+            message.textContent=e.data
+            let children=[...document.getElementById("content").children]
+            if(children.length>0){
+                document.getElementById("content").insertBefore(message,children[0])
+            }
+            else{
+                document.getElementById("content").appendChild(message)
+            }
+        }
+        client.onclose=()=>console.log("Disconnected successfully")
+        
+        //for sending message to room
+        document.getElementById("btn").onclick=function(){
+            let input=document.getElementById("message")
+            client.send( JSON.stringify( {
+                type: "message",
+                roomId: window.location.pathname.replace("/",""),
+                payload: input.value
+            } ) )
+            input.value=""
+        }
+
+        //closing connection
+        document.getElementById("close-btn").onclick=function(){
+            client.close()
+        }
+
+</script>
+</html>
